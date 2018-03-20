@@ -23,7 +23,7 @@ dotenv = begin
   dotenv_pattern = /^(?:export\s+|)(?<key>[[:alnum:]_]+)=((?<quote>["'])?(?<val>.*?[^\\])\k<quote>?|)$/
 
   # find that above node_modules/react-native-config/ios/
-  path = File.join(Dir.pwd, "../../../#{file}")
+  path = File.join(ENV['SRCROOT'], "..", file)
   if File.exists?(path)
     raw = File.read(path)
   elsif File.exists?(file)
@@ -61,15 +61,17 @@ template = <<EOF
   #define DOT_ENV @{ #{dotenv_objc} };
 EOF
 
+lib_path = File.join(ENV['SRCROOT'], "..", "node_modules/react-native-config/ios/ReactNativeConfig")
+
 # write it so that ReactNativeConfig.m can return it
-path = File.join(ENV["SYMROOT"], "GeneratedDotEnv.m")
+path = File.join(lib_path, "GeneratedDotEnv.m")
 File.open(path, "w") { |f| f.puts template }
 
 # create header file with defines for the Info.plist preprocessor
 info_plist_defines_objc = dotenv.map { |k, v| %Q(#define __RN_CONFIG_#{k}  #{v}) }.join("\n")
 
 # write it so the Info.plist preprocessor can access it
-path = File.join(ENV["BUILD_DIR"], "GeneratedInfoPlistDotEnv.h")
+path = File.join(lib_path, "GeneratedInfoPlistDotEnv.h")
 File.open(path, "w") { |f| f.puts info_plist_defines_objc }
 
 if custom_env
